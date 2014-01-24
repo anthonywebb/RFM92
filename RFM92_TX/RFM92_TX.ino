@@ -22,6 +22,7 @@ byte currentMode = 0x81;
 #define REG_IRQ_FLAGS               0x10
 #define REG_DIO_MAPPING_1           0x40
 #define REG_DIO_MAPPING_2           0x41
+#define REG_SYMB_TIMEOUT            0x14
 
 void setup() {                
   // initialize the pins
@@ -37,11 +38,14 @@ void setup() {
   // LoRa mode 
   setLoRaMode();
   
+  // Turn on implicit header mode
+  writeRegister(REG_SYMB_TIMEOUT,0x0C);
+  
   // Change the DIO mapping to 01 so we can listen for TxDone on the interrupt
   writeRegister(REG_DIO_MAPPING_1,0x01);
   writeRegister(REG_DIO_MAPPING_2,0x00);
 
-  // Setup Receive Continous Mode
+  // Go to standby mode
   setMode(RF92_MODE_STANDBY);
   
   Serial.println("Setup Complete");

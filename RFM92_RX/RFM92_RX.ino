@@ -23,6 +23,7 @@ byte currentMode = 0x81;
 #define REG_IRQ_FLAGS               0x10
 #define REG_DIO_MAPPING_1           0x40
 #define REG_DIO_MAPPING_2           0x41
+#define REG_SYMB_TIMEOUT            0x14
 
 // the setup routine runs once when you press reset:
 void setup() {                
@@ -38,6 +39,9 @@ void setup() {
 
   // LoRa mode 
   setLoRaMode();
+  
+  // Turn on implicit header mode
+  writeRegister(REG_SYMB_TIMEOUT,0x0C);
   
   // Setup Receive Continous Mode
   setMode(RF92_MODE_RX_CONTINUOS);
