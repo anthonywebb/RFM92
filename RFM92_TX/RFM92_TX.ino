@@ -122,8 +122,10 @@ void sendData(char *buffer, int payloadSize)
   setMode(RF92_MODE_TX);
   
   // once TxDone has flipped, everything has been sent
-  while(digitalRead(dio0) == 0);
+  while(digitalRead(dio0) == 0)
+  {
     Serial.print("z");
+  }
   
   Serial.println(" done sending!");
   
