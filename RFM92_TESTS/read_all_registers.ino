@@ -60,44 +60,6 @@ void loop() {
 }
 
 /////////////////////////////////////
-//    Method:   Send TO BUFFER
-//////////////////////////////////////
-void sendData(char *buffer, int payloadSize)
-{
-  setMode(RF92_MODE_STANDBY);
-  
-  Serial.print("Sending: ");
-  Serial.println(buffer);
-  
-  writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_TX_BASE_AD));  // Update the address ptr to the current tx base address
-  
-  select();
-  // tell SPI which address you want to write to
-  SPI.transfer(REG_FIFO | 0x80);
-  // loop over the payload and put it on the buffer 
-  for (byte i = 0; i < payloadSize-1; i++){
-    Serial.println(buffer[i]);
-    SPI.transfer(buffer[i]);
-  }
-  unselect();
-  
-  Serial.print("Entering transmit mode! ");
-  // go into transmit mode
-  setMode(RF92_MODE_TX);
-  
-  // once TxDone has flipped, everything has been sent
-  while(digitalRead(dio0) == 0);
-    Serial.print("z");
-  
-  Serial.println(" done sending!");
-  
-  // blink the LED
-  digitalWrite(led, HIGH);
-  delay(100);              
-  digitalWrite(led, LOW);
-}
-
-/////////////////////////////////////
 //    Method:   Read Register
 //////////////////////////////////////
 
