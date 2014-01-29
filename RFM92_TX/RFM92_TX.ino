@@ -12,17 +12,18 @@ byte currentMode = 0x81;
 #define REG_FIFO_ADDR_PTR           0x0D 
 #define REG_FIFO_TX_BASE_AD         0x0E
 #define REG_FIFO_RX_BASE_AD         0x0F
-#define REG_RX_NB_BYTES             0x1D
+#define REG_RX_NB_BYTES             0x13
+#define REG_OPMODE                  0x01
+#define REG_FIFO_RX_CURRENT_ADDR    0x10
+#define REG_IRQ_FLAGS               0x12
+#define REG_DIO_MAPPING_1           0x40
+#define REG_DIO_MAPPING_2           0x41
+#define REG_SYMB_TIMEOUT            0x1F
+
 #define RF92_MODE_RX_CONTINUOS      0x85
 #define RF92_MODE_TX                0x83
 #define RF92_MODE_SLEEP             0x80
 #define RF92_MODE_STANDBY           0x81
-#define REG_OPMODE                  0x01
-#define REG_RX_DATA_ADDR            0x26
-#define REG_IRQ_FLAGS               0x10
-#define REG_DIO_MAPPING_1           0x40
-#define REG_DIO_MAPPING_2           0x41
-#define REG_SYMB_TIMEOUT            0x14
 
 void setup() {                
   // initialize the pins
@@ -110,6 +111,11 @@ void sendData(char *buffer, int payloadSize)
   select();
   // tell SPI which address you want to write to
   SPI.transfer(REG_FIFO | 0x80);
+  
+  // tell the 
+  SPI.transfer(0x05);
+  SPI.transfer(0x01);
+  
   // loop over the payload and put it on the buffer 
   for (byte i = 0; i < payloadSize-1; i++){
     Serial.println(buffer[i]);
@@ -122,10 +128,8 @@ void sendData(char *buffer, int payloadSize)
   setMode(RF92_MODE_TX);
   
   // once TxDone has flipped, everything has been sent
-  while(digitalRead(dio0) == 0)
-  {
+  while(digitalRead(dio0) == 0);
     Serial.print("z");
-  }
   
   Serial.println(" done sending!");
   

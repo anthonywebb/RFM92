@@ -13,17 +13,18 @@ byte currentMode = 0x81;
 #define REG_FIFO_ADDR_PTR           0x0D 
 #define REG_FIFO_TX_BASE_AD         0x0E
 #define REG_FIFO_RX_BASE_AD         0x0F
-#define REG_RX_NB_BYTES             0x1D
+#define REG_RX_NB_BYTES             0x13
+#define REG_OPMODE                  0x01
+#define REG_FIFO_RX_CURRENT_ADDR    0x10
+#define REG_IRQ_FLAGS               0x12
+#define REG_DIO_MAPPING_1           0x40
+#define REG_DIO_MAPPING_2           0x41
+#define REG_SYMB_TIMEOUT            0x1F
+
 #define RF92_MODE_RX_CONTINUOS      0x85
 #define RF92_MODE_TX                0x83
 #define RF92_MODE_SLEEP             0x80
 #define RF92_MODE_STANDBY           0x81
-#define REG_OPMODE                  0x01
-#define REG_RX_DATA_ADDR            0x26
-#define REG_IRQ_FLAGS               0x10
-#define REG_DIO_MAPPING_1           0x40
-#define REG_DIO_MAPPING_2           0x41
-#define REG_SYMB_TIMEOUT            0x14
 
 // the setup routine runs once when you press reset:
 void setup() {                
