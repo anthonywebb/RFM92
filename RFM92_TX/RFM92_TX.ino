@@ -18,7 +18,10 @@ byte currentMode = 0x81;
 #define REG_IRQ_FLAGS               0x12
 #define REG_DIO_MAPPING_1           0x40
 #define REG_DIO_MAPPING_2           0x41
-#define REG_SYMB_TIMEOUT            0x1F
+#define REG_MODEM_CONFIG            0x1D
+#define REG_PAYLOAD_LENGTH          0x22
+#define REG_IRQ_FLAGS_MASK          0x11
+#define REG_HOP_PERIOD              0x24
 
 #define RF92_MODE_RX_CONTINUOS      0x85
 #define RF92_MODE_TX                0x83
@@ -39,13 +42,14 @@ void setup() {
   // LoRa mode 
   setLoRaMode();
   
-  // Turn on implicit header mode
-  writeRegister(REG_SYMB_TIMEOUT,0x0C);
+  // Turn on implicit header mode and set payload length
+  writeRegister(REG_MODEM_CONFIG,0x0C);
+  writeRegister(REG_PAYLOAD_LENGTH,0x0A);
   
   // Change the DIO mapping to 01 so we can listen for TxDone on the interrupt
-  writeRegister(REG_DIO_MAPPING_1,0x01);
+  writeRegister(REG_DIO_MAPPING_1,0x40);
   writeRegister(REG_DIO_MAPPING_2,0x00);
-
+  
   // Go to standby mode
   setMode(RF92_MODE_STANDBY);
   
@@ -65,8 +69,8 @@ void loop() {
       }
       else if (content == "2"){
         Serial.println("Sending data to FIFO");
-        char tmp[] = "abcdefg";
-        sendData(tmp,sizeof(tmp)); 
+        char tmp[] = "abcdefghij";
+        sendData(tmp); 
       }  
       else if (content == "3"){
         Serial.print("DIO0 value is: ");
@@ -84,11 +88,11 @@ void loop() {
         Serial.print(readRegister(REG_FIFO));
       }
       else {
-        char tmp[50]; 
-        content.toCharArray(tmp,50);
+        char tmp[10]; 
+        content.toCharArray(tmp,10);
         Serial.print("Sending stuff to FIFO: ");
         Serial.println(tmp);
-        sendData(tmp,sizeof(content)-1);  
+        sendData(tmp);  
       }
 
       content = "";
@@ -99,25 +103,21 @@ void loop() {
 /////////////////////////////////////
 //    Method:   Send TO BUFFER
 //////////////////////////////////////
-void sendData(char *buffer, int payloadSize)
+void sendData(char *buffer)
 {
-  setMode(RF92_MODE_STANDBY);
-  
   Serial.print("Sending: ");
   Serial.println(buffer);
   
-  writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_TX_BASE_AD));  // Update the address ptr to the current tx base address
+  setMode(RF92_MODE_STANDBY);
+
+  writeRegister(REG_FIFO_TX_BASE_AD, 0x00);  // Update the address ptr to the current tx base address
+  writeRegister(REG_FIFO_ADDR_PTR, 0x00); 
   
   select();
   // tell SPI which address you want to write to
   SPI.transfer(REG_FIFO | 0x80);
-  
-  // tell the 
-  SPI.transfer(0x05);
-  SPI.transfer(0x01);
-  
   // loop over the payload and put it on the buffer 
-  for (byte i = 0; i < payloadSize-1; i++){
+  for (byte i = 0; i < 10; i++){
     Serial.println(buffer[i]);
     SPI.transfer(buffer[i]);
   }
@@ -128,10 +128,14 @@ void sendData(char *buffer, int payloadSize)
   setMode(RF92_MODE_TX);
   
   // once TxDone has flipped, everything has been sent
-  while(digitalRead(dio0) == 0);
-    Serial.print("z");
+  while(digitalRead(dio0) == 0){
+    Serial.print("y");
+  }
   
   Serial.println(" done sending!");
+  
+  // clear the flags 0x08 is the TxDone flag
+  writeRegister(REG_IRQ_FLAGS, 0x08); 
   
   // blink the LED
   digitalWrite(led, HIGH);
@@ -213,24 +217,25 @@ void setMode(byte newMode)
   switch (newMode) 
   {
     case RF92_MODE_RX_CONTINUOS:
+      Serial.println("Changing to Receive Continous Mode");
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
-      Serial.println("Changing to Receive Continous Mode");
       break;
     case RF92_MODE_TX:
+      Serial.println("Changing to Transmit Mode");
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
-      Serial.println("Changing to Transmit Mode");
+      
       break;
     case RF92_MODE_SLEEP:
+      Serial.println("Changing to Sleep Mode"); 
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
-      Serial.println("Changing to Sleep Mode"); 
       break;
     case RF92_MODE_STANDBY:
+      Serial.println("Changing to Standby Mode");
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
-      Serial.println("Changing to Standby Mode");
       break;
     default: return;
   } 
