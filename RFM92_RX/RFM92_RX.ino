@@ -6,7 +6,6 @@ String content = "";
 char character;
 int dio0 = 3;
 int dio5 = 2;
-int  receiving = 1;
 byte currentMode = 0x81;
 
 #define REG_FIFO                    0x00
@@ -60,7 +59,7 @@ void setup() {
 // the loop routine runs over and over again forever:
 void loop() {  
   
-  if(digitalRead(dio0) == 1 && receiving == 0)
+  if(digitalRead(dio0) == 1)
   {
     receiveMessage();
   }
@@ -75,10 +74,6 @@ void loop() {
         Serial.println("Reading all registers");
         readAllRegs();
       }
-      else if (content == "2"){
-       receiving = 0;
-       Serial.println("Entering Receiving Mode");
-      }  
       else if (content == "3"){
         Serial.print("DIO0 value is: ");
         Serial.println(digitalRead(dio0));
@@ -105,13 +100,20 @@ void loop() {
 //////////////////////////////////////
 void receiveMessage()
 {
-  receiving = 1;
+  
+  // clear the rxDone flag
+  writeRegister(REG_IRQ_FLAGS, 0x40); 
+  
   Serial.println("Packet Received");
   int x = readRegister(REG_IRQ_FLAGS); // if any of these are set then the inbound message failed
-  if(x != 0){
-    Serial.println("Oops there was a problem!!");
+  
+  // check for payload crc issues (0x20 is the bit we are looking for
+  if((x & 0x20) == 0x20)
+  {
+    Serial.println("Oops there was a crc problem!!");
     Serial.println(x);
-    receiving = 0;
+    // reset the crc flags
+    writeRegister(REG_IRQ_FLAGS, 0x20); 
   }
   else{
     byte currentAddr = readRegister(REG_FIFO_RX_CURRENT_ADDR);
