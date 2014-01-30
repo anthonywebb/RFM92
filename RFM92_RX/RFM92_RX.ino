@@ -1,12 +1,12 @@
 #include <SPI.h>
 
-int led = 13;
 int _slaveSelectPin = 10; 
 String content = "";
 char character;
 int dio0 = 3;
 int dio5 = 2;
 byte currentMode = 0x81;
+char msg[11];
 
 #define REG_FIFO                    0x00
 #define REG_FIFO_ADDR_PTR           0x0D 
@@ -28,12 +28,14 @@ byte currentMode = 0x81;
 #define RF92_MODE_SLEEP             0x80
 #define RF92_MODE_STANDBY           0x81
 
+#define PAYLOAD_LENGTH              0x0A
+#define IMPLICIT_MODE               0x0C
+
 
 // the setup routine runs once when you press reset:
 void setup() {                
   // initialize the pins
   pinMode( _slaveSelectPin, OUTPUT);
-  //pinMode(led, OUTPUT); 
   pinMode(dio0, INPUT);
   pinMode(dio5, INPUT);
   Serial.begin(9600);
@@ -45,8 +47,8 @@ void setup() {
   setLoRaMode();
   
   // Turn on implicit header mode and set payload length
-  writeRegister(REG_MODEM_CONFIG,0x0C);
-  writeRegister(REG_PAYLOAD_LENGTH,0x0A);
+  writeRegister(REG_MODEM_CONFIG,IMPLICIT_MODE);
+  writeRegister(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
   writeRegister(REG_HOP_PERIOD,0xFF);
   writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_BASE_AD));   
   
@@ -61,7 +63,9 @@ void loop() {
   
   if(digitalRead(dio0) == 1)
   {
-    receiveMessage();
+     receiveMessage(msg);
+     Serial.print(msg);
+     Serial.println("\n");
   }
    
   while (Serial.available() > 0) {
@@ -98,15 +102,14 @@ void loop() {
 /////////////////////////////////////
 //    Method:   Receive FROM BUFFER
 //////////////////////////////////////
-void receiveMessage()
+void receiveMessage(char *message)
 {
   
   // clear the rxDone flag
   writeRegister(REG_IRQ_FLAGS, 0x40); 
   
-  Serial.println("Packet Received");
   int x = readRegister(REG_IRQ_FLAGS); // if any of these are set then the inbound message failed
-  Serial.println(x);
+  //Serial.println(x);
   
   // check for payload crc issues (0x20 is the bit we are looking for
   if((x & 0x20) == 0x20)
@@ -119,22 +122,17 @@ void receiveMessage()
   else{
     byte currentAddr = readRegister(REG_FIFO_RX_CURRENT_ADDR);
     byte receivedCount = readRegister(REG_RX_NB_BYTES);
-    Serial.print("RX Current Addr:");
+    Serial.print("Packet! RX Current Addr:");
     Serial.println(currentAddr);
-    Serial.print("Number of bytes received:");
-    Serial.println(receivedCount);
+    //Serial.print("Number of bytes received:");
+    //Serial.println(receivedCount);
 
     writeRegister(REG_FIFO_ADDR_PTR, currentAddr);   
-    
+    // now loop over the fifo getting the data
     for(int i = 0; i < receivedCount; i++)
     {
-      Serial.println(readRegister(REG_FIFO)); 
+      message[i] = (char)readRegister(REG_FIFO);
     }
-    
-    // blink the LED
-    //digitalWrite(led, HIGH);
-    //delay(100);              
-    //digitalWrite(led, LOW);
   } 
 }
 
