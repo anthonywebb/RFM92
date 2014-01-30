@@ -7,6 +7,8 @@ char character;
 int dio0 = 3;
 int dio5 = 2;
 byte currentMode = 0x81;
+byte msgBase = 1;
+char payload[] = "123ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 #define REG_FIFO                    0x00
 #define REG_FIFO_ADDR_PTR           0x0D 
@@ -28,6 +30,9 @@ byte currentMode = 0x81;
 #define RF92_MODE_SLEEP             0x80
 #define RF92_MODE_STANDBY           0x81
 
+#define PAYLOAD_LENGTH              0x0A
+#define IMPLICIT_MODE               0x0C
+
 void setup() {                
   // initialize the pins
   pinMode( _slaveSelectPin, OUTPUT);
@@ -43,8 +48,8 @@ void setup() {
   setLoRaMode();
   
   // Turn on implicit header mode and set payload length
-  writeRegister(REG_MODEM_CONFIG,0x0C);
-  writeRegister(REG_PAYLOAD_LENGTH,0x0A);
+  writeRegister(REG_MODEM_CONFIG,IMPLICIT_MODE);
+  writeRegister(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
   
   // Change the DIO mapping to 01 so we can listen for TxDone on the interrupt
   writeRegister(REG_DIO_MAPPING_1,0x40);
@@ -58,52 +63,22 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
-  while (Serial.available() > 0) {
-     // read the incoming byte:
-    character = (char)Serial.read();
-    content.concat(character);
-    if (!Serial.available()) {
-      if(content == "1"){
-        Serial.println("Reading all registers");
-        readAllRegs();
-      }
-      else if (content == "2"){
-        Serial.println("Sending data to FIFO");
-        char tmp[] = "abcdefghij";
-        sendData(tmp); 
-      }  
-      else if (content == "3"){
-        Serial.print("DIO0 value is: ");
-        Serial.println(digitalRead(dio0));
-      }
-      else if (content == "4"){
-        Serial.print("DIO5 value is: ");
-        Serial.println(digitalRead(dio5));
-      }
-      else if (content == "5"){
-        Serial.print("Moving back to the beginning of fifo");
-        writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_TX_BASE_AD));
-      }
-      else if (content == "6"){
-        Serial.print(readRegister(REG_FIFO));
-      }
-      else {
-        char tmp[10]; 
-        content.toCharArray(tmp,10);
-        Serial.print("Sending stuff to FIFO: ");
-        Serial.println(tmp);
-        sendData(tmp);  
-      }
-
-      content = "";
-    } 
+  char tmp[] = {0,0,0,0,0,0,0,0,0,0};
+  for(byte i = 0;i<msgBase;i++){
+    tmp[i] = payload[i]; 
   }
+  msgBase++;
+  if(msgBase>10){
+    msgBase = 1; 
+  }
+  sendData(tmp);
+  delay(3000);
 }
 
 /////////////////////////////////////
 //    Method:   Send TO BUFFER
 //////////////////////////////////////
-void sendData(char *buffer)
+void sendData(char buffer[])
 {
   Serial.print("Sending: ");
   Serial.println(buffer);
@@ -117,22 +92,21 @@ void sendData(char *buffer)
   // tell SPI which address you want to write to
   SPI.transfer(REG_FIFO | 0x80);
   // loop over the payload and put it on the buffer 
-  for (byte i = 0; i < 10; i++){
-    Serial.println(buffer[i]);
+  for (int i = 0; i < 10; i++){
+    //Serial.println(buffer[i]);
     SPI.transfer(buffer[i]);
   }
   unselect();
   
-  Serial.print("Entering transmit mode! ");
   // go into transmit mode
   setMode(RF92_MODE_TX);
   
   // once TxDone has flipped, everything has been sent
   while(digitalRead(dio0) == 0){
-    Serial.print("y");
+    //Serial.print("y");
   }
   
-  Serial.println(" done sending!");
+  Serial.println(" done sending!\n");
   
   // clear the flags 0x08 is the TxDone flag
   writeRegister(REG_IRQ_FLAGS, 0x08); 

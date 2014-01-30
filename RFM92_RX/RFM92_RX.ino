@@ -33,7 +33,7 @@ byte currentMode = 0x81;
 void setup() {                
   // initialize the pins
   pinMode( _slaveSelectPin, OUTPUT);
-  pinMode(led, OUTPUT); 
+  //pinMode(led, OUTPUT); 
   pinMode(dio0, INPUT);
   pinMode(dio5, INPUT);
   Serial.begin(9600);
@@ -132,9 +132,9 @@ void receiveMessage()
     }
     
     // blink the LED
-    digitalWrite(led, HIGH);
-    delay(100);              
-    digitalWrite(led, LOW);
+    //digitalWrite(led, HIGH);
+    //delay(100);              
+    //digitalWrite(led, LOW);
   } 
 }
 
