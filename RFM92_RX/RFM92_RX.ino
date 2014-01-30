@@ -106,6 +106,7 @@ void receiveMessage()
   
   Serial.println("Packet Received");
   int x = readRegister(REG_IRQ_FLAGS); // if any of these are set then the inbound message failed
+  Serial.println(x);
   
   // check for payload crc issues (0x20 is the bit we are looking for
   if((x & 0x20) == 0x20)
