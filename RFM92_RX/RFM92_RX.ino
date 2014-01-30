@@ -19,12 +19,16 @@ byte currentMode = 0x81;
 #define REG_IRQ_FLAGS               0x12
 #define REG_DIO_MAPPING_1           0x40
 #define REG_DIO_MAPPING_2           0x41
-#define REG_SYMB_TIMEOUT            0x1F
+#define REG_MODEM_CONFIG            0x1D
+#define REG_PAYLOAD_LENGTH          0x22
+#define REG_IRQ_FLAGS_MASK          0x11
+#define REG_HOP_PERIOD              0x24
 
 #define RF92_MODE_RX_CONTINUOS      0x85
 #define RF92_MODE_TX                0x83
 #define RF92_MODE_SLEEP             0x80
 #define RF92_MODE_STANDBY           0x81
+
 
 // the setup routine runs once when you press reset:
 void setup() {                
@@ -41,13 +45,15 @@ void setup() {
   // LoRa mode 
   setLoRaMode();
   
-  // Turn on implicit header mode
-  writeRegister(REG_SYMB_TIMEOUT,0x0C);
+  // Turn on implicit header mode and set payload length
+  writeRegister(REG_MODEM_CONFIG,0x0C);
+  writeRegister(REG_PAYLOAD_LENGTH,0x0A);
+  writeRegister(REG_HOP_PERIOD,0xFF);
+  writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_BASE_AD));   
   
   // Setup Receive Continous Mode
   setMode(RF92_MODE_RX_CONTINUOS);
 
-  Serial.println(readRegister(REG_OPMODE),HEX);
   Serial.println("Setup Complete");
 }
 
@@ -81,6 +87,13 @@ void loop() {
         Serial.print("DIO5 value is: ");
         Serial.println(digitalRead(dio5));
       }
+      else if (content == "5"){
+        Serial.print("Moving back to the beginning of fifo");
+        writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_BASE_AD));
+      }
+      else if (content == "6"){
+        Serial.print(readRegister(REG_FIFO));
+      }
   
       content = "";
     } 
@@ -101,19 +114,15 @@ void receiveMessage()
     receiving = 0;
   }
   else{
-     
-    byte value = readRegister(REG_RX_DATA_ADDR);
-    Serial.print("Value: ");
-    Serial.println(value,HEX);
-    
+    byte currentAddr = readRegister(REG_FIFO_RX_CURRENT_ADDR);
     byte receivedCount = readRegister(REG_RX_NB_BYTES);
-    byte loc = value - receivedCount;
-    Serial.print("loc: ");
-    Serial.println(loc,HEX);
-
-    writeRegister(REG_FIFO_ADDR_PTR, loc);   
+    Serial.print("RX Current Addr:");
+    Serial.println(currentAddr);
     Serial.print("Number of bytes received:");
     Serial.println(receivedCount);
+
+    writeRegister(REG_FIFO_ADDR_PTR, currentAddr);   
+    
     for(int i = 0; i < receivedCount; i++)
     {
       Serial.println(readRegister(REG_FIFO)); 
