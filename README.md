@@ -20,3 +20,4 @@ OUTSTANDING QUESTIONS
 * There are some phantom messages flowing in pretty regularly.  I have no idea what they are, I suspect some sort of heartbeat, or other notification.  Still trying to decide the best way identify and/or discard them.
 * How improved is the distance over the RFM69HW?  I dont know yet, we are waiting on some boards so that we can test that.  I am hoping that it is greatly improved, we need to cover an open area of up to a couple miles which this module is apparently indeed capable of.
 * Still a little vague on what size the trace should be on my board from the module to the antenna, I understand it should be short, but not sure what size would be best or if it even matters?
+* We would like to have a unique "mac address" type ID for every module we have out there, I am wondering if there is some sort of unique hardware type identifier we can use?
