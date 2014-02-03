@@ -46,14 +46,7 @@ void setup() {
   // LoRa mode 
   setLoRaMode();
   
-  // Turn on implicit header mode and set payload length
-  writeRegister(REG_MODEM_CONFIG,IMPLICIT_MODE);
-  writeRegister(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
-  writeRegister(REG_HOP_PERIOD,0xFF);
-  writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_BASE_AD));   
-  
-  // Setup Receive Continous Mode
-  setMode(RF92_MODE_RX_CONTINUOS);
+  startReceiving();
 
   Serial.println("Setup Complete");
 }
@@ -92,6 +85,11 @@ void loop() {
       }
       else if (content == "6"){
         Serial.print(readRegister(REG_FIFO));
+      }
+      else if (content == "7"){
+        // LoRa mode 
+        setLoRaMode();
+        startReceiving();
       }
   
       content = "";
@@ -254,4 +252,19 @@ void setLoRaMode()
    
   Serial.println("LoRa Mode Set");
   return;
+}
+
+/////////////////////////////////////
+//    Method:   Setup to receive continuously
+//////////////////////////////////////
+void startReceiving()
+{
+  // Turn on implicit header mode and set payload length
+  writeRegister(REG_MODEM_CONFIG,IMPLICIT_MODE);
+  writeRegister(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
+  writeRegister(REG_HOP_PERIOD,0xFF);
+  writeRegister(REG_FIFO_ADDR_PTR, readRegister(REG_FIFO_RX_BASE_AD));   
+  
+  // Setup Receive Continous Mode
+  setMode(RF92_MODE_RX_CONTINUOS); 
 }
