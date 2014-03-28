@@ -23,6 +23,7 @@ char msg[11];
 #define REG_IRQ_FLAGS_MASK          0x11
 #define REG_HOP_PERIOD              0x24
 
+// MODES
 #define RF92_MODE_RX_CONTINUOS      0x85
 #define RF92_MODE_TX                0x83
 #define RF92_MODE_SLEEP             0x80
@@ -30,6 +31,18 @@ char msg[11];
 
 #define PAYLOAD_LENGTH              0x0A
 #define IMPLICIT_MODE               0x0C
+
+// POWER AMPLIFIER CONFIG
+#define REG_PA_CONFIG               0x09
+#define PA_MAX_BOOST                0x8F
+#define PA_LOW_BOOST                0x81
+#define PA_MED_BOOST                0x8A
+#define PA_OFF_BOOST                0x00
+
+// LOW NOISE AMPLIFIER
+#define REG_LNA                     0x0C
+#define LNA_MAX_GAIN                0x23  // 0010 0011
+#define LNA_OFF_GAIN                0x00
 
 
 // the setup routine runs once when you press reset:
@@ -208,11 +221,15 @@ void setMode(byte newMode)
   switch (newMode) 
   {
     case RF92_MODE_RX_CONTINUOS:
+      writeRegister(REG_PA_CONFIG, PA_OFF_BOOST);  // TURN PA OFF FOR RECIEVE??
+      writeRegister(REG_LNA, LNA_MAX_GAIN);  // MAX GAIN FOR RECIEVE
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
       Serial.println("Changing to Receive Continous Mode");
       break;
     case RF92_MODE_TX:
+      writeRegister(REG_LNA, LNA_OFF_GAIN);  // TURN LNA OFF FOR TRANSMITT
+      writeRegister(REG_PA_CONFIG, PA_MAX_BOOST);    // TURN PA TO MAX POWER 
       writeRegister(REG_OPMODE, newMode);
       currentMode = newMode; 
       Serial.println("Changing to Transmit Mode");
